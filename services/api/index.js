@@ -20,6 +20,7 @@ async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS applications (
       id SERIAL PRIMARY KEY,
+      gmail_message_id VARCHAR(255) UNIQUE,
       company VARCHAR(255),
       job_title VARCHAR(255),
       status VARCHAR(50) DEFAULT 'applied',
@@ -29,19 +30,33 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
+
+  // Add gmail_message_id column if it doesn't exist (for existing databases)
+  await pool.query(`
+    ALTER TABLE applications
+    ADD COLUMN IF NOT EXISTS gmail_message_id VARCHAR(255) UNIQUE
+  `);
+
   console.log('Database ready');
 }
 
-// POST /applications — save a new application
+// POST /applications — save a new application (skips duplicates)
 app.post('/applications', async (req, res) => {
-  const { company, job_title, email_subject, email_from, applied_date } = req.body;
+  const { company, job_title, email_subject, email_from, applied_date, gmail_message_id } = req.body;
 
   try {
     const result = await pool.query(
-      `INSERT INTO applications (company, job_title, email_subject, email_from, applied_date)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [company, job_title, email_subject, email_from, applied_date]
+      `INSERT INTO applications (company, job_title, email_subject, email_from, applied_date, gmail_message_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (gmail_message_id) DO NOTHING
+       RETURNING *`,
+      [company, job_title, email_subject, email_from, applied_date, gmail_message_id]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(200).json({ skipped: true, message: 'Already exists' });
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err.message);
