@@ -8,6 +8,7 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 const CREDENTIALS_PATH = path.join(__dirname, 'credentials.json');
 const TOKEN_PATH = path.join(__dirname, 'token.json');
 const PARSER_URL = process.env.PARSER_SERVICE_URL || 'http://localhost:3001';
+const API_URL = process.env.API_SERVICE_URL || 'http://localhost:3002';
 
 async function authenticate() {
   const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
@@ -105,6 +106,20 @@ async function fetchJobEmails(auth) {
       console.log('✅ Parsed result:');
       console.log('   Company:  ', parsed.company || 'Unknown');
       console.log('   Job Title:', parsed.jobTitle || 'Not found');
+
+      // Save to API Service
+      try {
+        await axios.post(`${API_URL}/applications`, {
+          company: parsed.company,
+          job_title: parsed.jobTitle,
+          email_subject: subject,
+          email_from: from,
+          applied_date: date,
+        });
+        console.log('💾 Saved to database');
+      } catch (err) {
+        console.error('Failed to save to API:', err.message);
+      }
     }
 
     console.log('');

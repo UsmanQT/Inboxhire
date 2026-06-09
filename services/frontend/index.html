@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trackply — Job Application Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+      color: #1a1a2e;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    header span { font-size: 13px; color: #aaa; }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      padding: 24px 40px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 16px 24px;
+      flex: 1;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .stat-card .number { font-size: 28px; font-weight: 700; }
+    .stat-card .label { font-size: 12px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .stat-card.applied .number { color: #3b82f6; }
+    .stat-card.interviewing .number { color: #f59e0b; }
+    .stat-card.offer .number { color: #10b981; }
+    .stat-card.rejected .number { color: #ef4444; }
+
+    .table-container {
+      margin: 0 40px 40px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .table-header h2 { font-size: 15px; font-weight: 600; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th {
+      text-align: left;
+      padding: 12px 20px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      border-bottom: 1px solid #f0f0f0;
+      background: #fafafa;
+    }
+
+    td {
+      padding: 14px 20px;
+      font-size: 14px;
+      border-bottom: 1px solid #f9f9f9;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .company { font-weight: 600; }
+    .job-title { color: #555; }
+    .date { color: #999; font-size: 13px; }
+
+    select.status-select {
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid #e0e0e0;
+      cursor: pointer;
+      background: white;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .refresh-btn {
+      background: #1a1a2e;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .refresh-btn:hover { background: #2d2d4e; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Trackply</h1>
+  <span id="last-updated"></span>
+</header>
+
+<div class="stats">
+  <div class="stat-card applied">
+    <div class="number" id="count-applied">0</div>
+    <div class="label">Applied</div>
+  </div>
+  <div class="stat-card interviewing">
+    <div class="number" id="count-interviewing">0</div>
+    <div class="label">Interviewing</div>
+  </div>
+  <div class="stat-card offer">
+    <div class="number" id="count-offer">0</div>
+    <div class="label">Offers</div>
+  </div>
+  <div class="stat-card rejected">
+    <div class="number" id="count-rejected">0</div>
+    <div class="label">Rejected</div>
+  </div>
+</div>
+
+<div class="table-container">
+  <div class="table-header">
+    <h2>Applications</h2>
+    <button class="refresh-btn" onclick="loadApplications()">↻ Refresh</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th>Job Title</th>
+        <th>Status</th>
+        <th>Date Applied</th>
+      </tr>
+    </thead>
+    <tbody id="applications-body">
+      <tr><td colspan="4" class="empty">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  const API = 'http://localhost:3002';
+
+  function formatDate(dateStr) {
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+    } catch {
+      return dateStr;
+    }
+  }
+
+  async function updateStatus(id, status) {
+    await fetch(`${API}/applications/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    loadApplications();
+  }
+
+  async function loadApplications() {
+    const res = await fetch(`${API}/applications`);
+    const apps = await res.json();
+
+    const counts = { applied: 0, interviewing: 0, offer: 0, rejected: 0 };
+    apps.forEach(a => { if (counts[a.status] !== undefined) counts[a.status]++; });
+    document.getElementById('count-applied').textContent = counts.applied;
+    document.getElementById('count-interviewing').textContent = counts.interviewing;
+    document.getElementById('count-offer').textContent = counts.offer;
+    document.getElementById('count-rejected').textContent = counts.rejected;
+
+    document.getElementById('last-updated').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString();
+
+    const tbody = document.getElementById('applications-body');
+
+    if (apps.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No applications yet. Run the Gmail Poller to fetch your emails.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = apps.map(app => `
+      <tr>
+        <td class="company">${app.company || '—'}</td>
+        <td class="job-title">${app.job_title || '—'}</td>
+        <td>
+          <select class="status-select"
+            onchange="updateStatus(${app.id}, this.value)">
+            <option value="applied"      ${app.status === 'applied'      ? 'selected' : ''}>Applied</option>
+            <option value="interviewing" ${app.status === 'interviewing' ? 'selected' : ''}>Interviewing</option>
+            <option value="offer"        ${app.status === 'offer'        ? 'selected' : ''}>Offer</option>
+            <option value="rejected"     ${app.status === 'rejected'     ? 'selected' : ''}>Rejected</option>
+          </select>
+        </td>
+        <td class="date">${formatDate(app.applied_date)}</td>
+      </tr>
+    `).join('');
+  }
+
+  loadApplications();
+</script>
+
+</body>
+</html>
