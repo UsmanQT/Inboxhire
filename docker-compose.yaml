@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:13
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+  gmail-poller:
+    build: ./services/gmail-poller
+    environment:
+      - PARSER_SERVICE_URL=${PARSER_SERVICE_URL}
+      - API_SERVICE_URL=${API_SERVICE_URL}
+      - POLL_INTERVAL_MS=${POLL_INTERVAL_MS}
+    depends_on:
+      - parser
+      - api
+    volumes:
+      - ./services/gmail-poller/credentials.json:/app/credentials.json
+      - ./services/gmail-poller/token.json:/app/token.json
+      - ./services/gmail-poller/last_run.json:/app/last_run.json
+  parser:
+    build: ./services/parser
+    ports:
+      - "3001:3001"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+  api:
+    build: ./services/api
+    ports:
+      - "3002:3002"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "80:80"
+volumes:
+  postgres_data:
