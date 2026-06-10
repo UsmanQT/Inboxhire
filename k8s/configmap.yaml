@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inboxhire-config
+  namespace: inboxhire
+data:
+  DB_HOST: "db"
+  DB_PORT: "5432"
+  DB_USER: "admin"
+  DB_NAME: "jobtracker"
+  PARSER_SERVICE_URL: "http://parser:3001"
+  API_SERVICE_URL: "http://api:3002"
+  POLL_INTERVAL_MS: "300000"

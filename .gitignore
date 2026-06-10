@@ -1,0 +1,19 @@
+# Secrets - never commit these
+k8s/secret.yaml
+credentials.json
+token.json
+services/gmail-poller/credentials.json
+services/gmail-poller/token.json
+services/gmail-poller/last_run.json
+
+# Environment files
+.env
+.env.local
+.env.*
+
+# OS
+.DS_Store
+*/.DS_Store
+
+# Node
+node_modules/

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gmail-poller
+  namespace: inboxhire
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gmail-poller
+  template:
+    metadata:
+      labels:
+        app: gmail-poller
+    spec:
+      containers:
+        - name: gmail-poller
+          image: iusmanq/inboxhire-gmail-poller:v1
+          env:
+            - name: PARSER_SERVICE_URL
+              valueFrom:
+               configMapKeyRef:
+                  name: inboxhire-config
+                  key: PARSER_SERVICE_URL
+            - name: API_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: inboxhire-config
+                  key: API_SERVICE_URL
+            - name: POLL_INTERVAL_MS
+              valueFrom:
+                configMapKeyRef:
+                  name: inboxhire-config
+                  key: POLL_INTERVAL_MS
+          volumeMounts:
+            - name: gmail-credentials
+              mountPath: /app/credentials.json
+              subPath: credentials.json
+            - name: gmail-credentials
+              mountPath: /app/token.json
+              subPath: token.json
+      volumes:
+        - name: gmail-credentials
+          secret:
+            secretName: gmail-credentials
+
