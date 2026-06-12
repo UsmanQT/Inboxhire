@@ -51,6 +51,7 @@ jobs:
         with:
           context: ./services/api
           push: true
+          platforms: linux/amd64
           tags: |
             iusmanq/inboxhire-api:latest
             iusmanq/inboxhire-api:v1.0.${{ github.run_number }}
@@ -73,6 +74,7 @@ jobs:
         with:
           context: ./services/parser
           push: true
+          platforms: linux/amd64
           tags: |
             iusmanq/inboxhire-parser:latest
             iusmanq/inboxhire-parser:v1.0.${{ github.run_number }}
@@ -95,6 +97,7 @@ jobs:
         with:
           context: ./services/gmail-poller
           push: true
+          platforms: linux/amd64
           tags: |
             iusmanq/inboxhire-gmail-poller:latest
             iusmanq/inboxhire-gmail-poller:v1.0.${{ github.run_number }}
@@ -117,6 +120,7 @@ jobs:
         with:
           context: ./services/frontend
           push: true
+          platforms: linux/amd64
           tags: |
             iusmanq/inboxhire-frontend:latest
             iusmanq/inboxhire-frontend:v1.0.${{ github.run_number }}
@@ -132,7 +136,7 @@ jobs:
       - name: Set up kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_OCI }}" > ~/.kube/config
+          echo "${{ secrets.KUBECONFIG_EKS }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Apply Kubernetes manifests
@@ -150,7 +154,7 @@ jobs:
           kubectl apply -f k8s/gmail-poller/deployment.yaml
           kubectl apply -f k8s/frontend/deployment.yaml
           kubectl apply -f k8s/frontend/service.yaml
-          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/ingress-eks.yaml
 
       - name: Restart deployments to pull latest images
         run: |
