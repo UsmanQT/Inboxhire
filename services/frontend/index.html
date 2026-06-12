@@ -20,35 +20,87 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: relative;
     }
 
     header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
     header span { font-size: 13px; color: #aaa; }
 
-    .stats {
+    .header-right {
       display: flex;
+      align-items: center;
       gap: 16px;
-      padding: 24px 40px;
     }
 
-    .stat-card {
+    .hamburger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 4px;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
       background: white;
-      border-radius: 10px;
-      padding: 16px 24px;
-      flex: 1;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border-radius: 2px;
+      transition: all 0.2s;
     }
 
-    .stat-card .number { font-size: 28px; font-weight: 700; }
-    .stat-card .label { font-size: 12px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stats-panel {
+      display: none;
+      position: absolute;
+      top: 64px;
+      right: 40px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      z-index: 100;
+      padding: 20px;
+      min-width: 260px;
+    }
 
-    .stat-card.applied .number { color: #3b82f6; }
-    .stat-card.interviewing .number { color: #f59e0b; }
-    .stat-card.offer .number { color: #10b981; }
-    .stat-card.rejected .number { color: #ef4444; }
+    .stats-panel.open { display: block; }
+
+    .stats-panel h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .stat-row:last-child { border-bottom: none; }
+
+    .stat-row .label {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .stat-row .number {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .stat-row.applied .number { color: #3b82f6; }
+    .stat-row.interviewing .number { color: #f59e0b; }
+    .stat-row.offer .number { color: #10b981; }
+    .stat-row.rejected .number { color: #ef4444; }
 
     .table-container {
-      margin: 0 40px 40px;
+      margin: 24px 40px 40px;
       background: white;
       border-radius: 10px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
@@ -125,27 +177,35 @@
 
 <header>
   <h1>Inboxhire</h1>
-  <span id="last-updated"></span>
-</header>
+  <div class="header-right">
+    <span id="last-updated"></span>
+    <button class="hamburger" onclick="toggleStats()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
 
-<div class="stats">
-  <div class="stat-card applied">
-    <div class="number" id="count-applied">0</div>
-    <div class="label">Applied</div>
+  <div class="stats-panel" id="stats-panel">
+    <h3>Overview</h3>
+    <div class="stat-row applied">
+      <span class="label">Applied</span>
+      <span class="number" id="count-applied">0</span>
+    </div>
+    <div class="stat-row interviewing">
+      <span class="label">Interviewing</span>
+      <span class="number" id="count-interviewing">0</span>
+    </div>
+    <div class="stat-row offer">
+      <span class="label">Offers</span>
+      <span class="number" id="count-offer">0</span>
+    </div>
+    <div class="stat-row rejected">
+      <span class="label">Rejected</span>
+      <span class="number" id="count-rejected">0</span>
+    </div>
   </div>
-  <div class="stat-card interviewing">
-    <div class="number" id="count-interviewing">0</div>
-    <div class="label">Interviewing</div>
-  </div>
-  <div class="stat-card offer">
-    <div class="number" id="count-offer">0</div>
-    <div class="label">Offers</div>
-  </div>
-  <div class="stat-card rejected">
-    <div class="number" id="count-rejected">0</div>
-    <div class="label">Rejected</div>
-  </div>
-</div>
+</header>
 
 <div class="table-container">
   <div class="table-header">
@@ -169,6 +229,16 @@
 
 <script>
   const API = '/api';
+
+  function toggleStats() {
+    document.getElementById('stats-panel').classList.toggle('open');
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.hamburger') && !e.target.closest('.stats-panel')) {
+      document.getElementById('stats-panel').classList.remove('open');
+    }
+  });
 
   function formatDate(dateStr) {
     try {
@@ -215,8 +285,7 @@
         <td class="company">${app.company || '—'}</td>
         <td class="job-title">${app.job_title || '—'}</td>
         <td>
-          <select class="status-select"
-            onchange="updateStatus(${app.id}, this.value)">
+          <select class="status-select" onchange="updateStatus(${app.id}, this.value)">
             <option value="applied"      ${app.status === 'applied'      ? 'selected' : ''}>Applied</option>
             <option value="interviewing" ${app.status === 'interviewing' ? 'selected' : ''}>Interviewing</option>
             <option value="offer"        ${app.status === 'offer'        ? 'selected' : ''}>Offer</option>
