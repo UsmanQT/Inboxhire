@@ -4,10 +4,9 @@ metadata:
   name: api
   namespace: inboxhire
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: api
   ports:
     - port: 3002
       targetPort: 3002
-      nodePort: 30010

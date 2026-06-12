@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build, Push, and Deploy
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - feature/kubernetes
     paths:
       - 'services/**'
+      - 'k8s/**'
 
 jobs:
   detect-changes:
@@ -119,3 +120,47 @@ jobs:
           tags: |
             iusmanq/inboxhire-frontend:latest
             iusmanq/inboxhire-frontend:v1.0.${{ github.run_number }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-api, build-parser, build-gmail-poller, build-frontend]
+    # Run deploy even if some build jobs were skipped (no changes to that service)
+    if: always() && !failure() && !cancelled()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_OCI }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/database/pvc.yaml
+          kubectl apply -f k8s/database/deployment.yaml
+          kubectl apply -f k8s/database/service.yaml
+          kubectl apply -f k8s/parser/deployment.yaml
+          kubectl apply -f k8s/parser/service.yaml
+          kubectl apply -f k8s/api/deployment.yaml
+          kubectl apply -f k8s/api/service.yaml
+          kubectl apply -f k8s/gmail-poller/deployment.yaml
+          kubectl apply -f k8s/frontend/deployment.yaml
+          kubectl apply -f k8s/frontend/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Restart deployments to pull latest images
+        run: |
+          kubectl rollout restart deployment/api -n inboxhire
+          kubectl rollout restart deployment/parser -n inboxhire
+          kubectl rollout restart deployment/gmail-poller -n inboxhire
+          kubectl rollout restart deployment/frontend -n inboxhire
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/api -n inboxhire --timeout=120s
+          kubectl rollout status deployment/parser -n inboxhire --timeout=120s
+          kubectl rollout status deployment/frontend -n inboxhire --timeout=120s
