@@ -172,6 +172,6 @@ jobs:
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/api -n inboxhire --timeout=120s
-          kubectl rollout status deployment/parser -n inboxhire --timeout=120s
-          kubectl rollout status deployment/frontend -n inboxhire --timeout=120s
+          kubectl rollout status deployment/api -n inboxhire --timeout=300s
+          kubectl rollout status deployment/parser -n inboxhire --timeout=300s
+          kubectl rollout status deployment/frontend -n inboxhire --timeout=300s
