@@ -7,6 +7,7 @@ on:
     paths:
       - 'services/**'
       - 'k8s/**'
+      - '.github/workflows/**'
 
 jobs:
   detect-changes:
@@ -150,7 +151,6 @@ jobs:
         run: |
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
           kubectl apply -f k8s/database/pvc.yaml
           kubectl apply -f k8s/database/deployment.yaml
           kubectl apply -f k8s/database/service.yaml
