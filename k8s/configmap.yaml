@@ -11,4 +11,4 @@ data:
   PARSER_SERVICE_URL: "http://parser:3001"
   API_SERVICE_URL: "http://api:3002"
   POLL_INTERVAL_MS: "300000"
-  # eks deployment
+  # eks deployment v2
