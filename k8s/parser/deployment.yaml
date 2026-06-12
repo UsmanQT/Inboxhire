@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: parser
-          image: iusmanq/inboxhire-parser:v1
+          image: iusmanq/inboxhire-parser:latest
           ports:
             - containerPort: 3001
           env:

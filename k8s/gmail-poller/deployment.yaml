@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: gmail-poller
-          image: iusmanq/inboxhire-gmail-poller:v1
+          image: iusmanq/inboxhire-gmail-poller:latest
           env:
             - name: PARSER_SERVICE_URL
               valueFrom:

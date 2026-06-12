@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: iusmanq/inboxhire-api:v1
+          image: iusmanq/inboxhire-api:latest
           ports:
             - containerPort: 3002
           env:
